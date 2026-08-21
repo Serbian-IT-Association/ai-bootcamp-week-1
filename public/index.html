@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="sr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Priprema za intervju</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="page-header">
+        <svg
+          class="page-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 -960 960 960"
+          fill="currentColor"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            d="M480-80q-83 0-156-31.5T197-197q-54-54-84.5-127T80-480q0-84 30.5-157T197-763q54-54 127-85.5T480-880q75 0 140 24t117 66l-43 43q-44-35-98-54t-116-19q-145 0-242.5 97.5T140-480q0 145 97.5 242.5T480-140q145 0 242.5-97.5T820-480q0-30-4.5-58.5T802-594l46-46q16 37 24 77t8 83q0 85-31 158t-85 127q-54 54-127 84.5T480-80Zm-59-218L256-464l45-45 120 120 414-414 46 45-460 460Z"
+          />
+        </svg>
+
+        <h1>Priprema za intervju</h1>
+
+        <p class="intro">
+          Obeleži korake koje si završio/la i pratiš svoj napredak pripreme za intervju.
+        </p>
+      </header>
+
+      <fieldset class="group">
+        <legend>Dokumenti</legend>
+
+        <div class="checklist-item">
+          <input type="checkbox" id="prep-item-1" data-prep-item />
+          <label for="prep-item-1">Ažuriraj CV</label>
+        </div>
+
+        <div class="checklist-item">
+          <input type="checkbox" id="prep-item-2" data-prep-item />
+          <label for="prep-item-2">Pripremi primere projekata</label>
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Istraživanje firme</legend>
+
+        <div class="checklist-item">
+          <input type="checkbox" id="prep-item-3" data-prep-item />
+          <label for="prep-item-3">Pročitaj opis pozicije</label>
+        </div>
+
+        <div class="checklist-item">
+          <input type="checkbox" id="prep-item-4" data-prep-item />
+          <label for="prep-item-4">Istraži proizvode i usluge firme</label>
+        </div>
+
+        <div class="checklist-item">
+          <input type="checkbox" id="prep-item-5" data-prep-item />
+          <label for="prep-item-5">Pripremi pitanja za sagovornike</label>
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Vežba odgovora</legend>
+
+        <div class="checklist-item">
+          <input type="checkbox" id="prep-item-6" data-prep-item />
+          <label for="prep-item-6">Vežbaj predstavljanje</label>
+        </div>
+
+        <div class="checklist-item">
+          <input type="checkbox" id="prep-item-7" data-prep-item />
+          <label for="prep-item-7">Pripremi primer timskog rada</label>
+        </div>
+
+        <div class="checklist-item">
+          <input type="checkbox" id="prep-item-8" data-prep-item />
+          <label for="prep-item-8">Vežbaj odgovor na tehničko pitanje</label>
+        </div>
+      </fieldset>
+
+      <section class="progress-panel" aria-label="Napredak pripreme">
+        <p class="progress-count">
+          <span id="progress-text">0 od 8 završeno</span>
+          <span class="progress-count-separator" aria-hidden="true">&middot;</span>
+          <span id="progress-percentage">0%</span>
+        </p>
+
+        <progress id="progress-bar" max="8" value="0" aria-label="Napredak pripreme za intervju">
+          0%
+        </progress>
+
+        <p id="progress-message" aria-live="polite">Počni pripremu</p>
+      </section>
+
+      <button id="reset-progress" type="button">Resetuj napredak</button>
+    </main>
+
+    <script type="module" src="assets/main.js"></script>
+  </body>
+</html>

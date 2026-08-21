@@ -1,0 +1,206 @@
+/*
+ * Design system tokens for "Priprema za intervju".
+ * See project-specification.md section 5 for the full rationale. Do not
+ * introduce colours, sizes, or spacing outside these tokens and the values
+ * derived from them below.
+ */
+:root {
+  /* Colour tokens (section 5.2). */
+  --color-bg: #f6f5f2;
+  --color-surface: #ffffff;
+  --color-border: #e3e1db;
+  --color-text: #1c1b1a;
+  --color-text-muted: #63615c;
+  --color-accent: #e8552e;
+  --color-accent-contrast: #ffffff;
+
+  /* Spacing scale, 8px base (section 5.4). Use only these values. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+
+  /* Type scale (section 5.3). */
+  --font-size-title: 1.75rem;
+  --font-size-group-heading: 1.125rem;
+  --font-size-body: 1rem;
+  --font-size-secondary: 0.9375rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  margin: 0;
+  padding: var(--space-4);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: var(--font-size-body);
+  line-height: 1.5;
+}
+
+/* The single centred card (section 5.4). */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  width: 100%;
+  max-width: 40rem;
+  height: fit-content;
+  padding: var(--space-5);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--space-2);
+}
+
+.page-icon {
+  flex-shrink: 0;
+  color: var(--color-accent);
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: var(--font-size-title);
+  font-weight: 600;
+}
+
+.intro {
+  flex-basis: 100%;
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-secondary);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.group legend {
+  padding: 0;
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-group-heading);
+  font-weight: 600;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  border-radius: 4px;
+}
+
+.checklist-item:hover {
+  background-color: var(--color-border);
+}
+
+.checklist-item input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--color-accent);
+}
+
+/*
+ * Presentation only: once an item is checked, its label is de-emphasised.
+ * No behaviour depends on this; it is a plain CSS sibling selector.
+ */
+.checklist-item input[type="checkbox"]:checked + label {
+  color: var(--color-text-muted);
+}
+
+.progress-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.progress-count {
+  margin: 0;
+  font-size: var(--font-size-secondary);
+  color: var(--color-text-muted);
+}
+
+.progress-count-separator {
+  margin: 0 var(--space-1);
+}
+
+#progress-bar {
+  width: 100%;
+  height: 12px;
+  accent-color: var(--color-accent);
+  transition: width 150ms ease-out;
+}
+
+#progress-message {
+  margin: 0;
+  font-weight: 600;
+}
+
+#reset-progress {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-4);
+  background-color: transparent;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: 8px;
+  font-size: var(--font-size-body);
+  cursor: pointer;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+#reset-progress:hover,
+#reset-progress:focus-visible {
+  background-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+/* Focus visibility (section 5.7). Never remove this without an equivalent. */
+input[type="checkbox"]:focus-visible,
+#reset-progress:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #progress-bar,
+  #reset-progress {
+    transition: none;
+  }
+}
+
+/* One breakpoint is enough at this scale (section 5.5). */
+@media (max-width: 600px) {
+  body {
+    padding: var(--space-3);
+  }
+
+  .page {
+    padding: var(--space-3);
+  }
+
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+}

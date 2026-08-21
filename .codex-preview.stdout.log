@@ -1,0 +1,13 @@
+
+> priprema-za-intervju@1.0.0 start
+> npm run build && node scripts/serve.mjs
+
+
+> priprema-za-intervju@1.0.0 build
+> npm run clean && tsc -p tsconfig.build.json && node scripts/copy-static.mjs
+
+
+> priprema-za-intervju@1.0.0 clean
+> node scripts/clean.mjs
+
+http://localhost:4173
