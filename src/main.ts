@@ -1,4 +1,5 @@
 import { CompletedItemsStore } from "./storage.ts";
+import { calculateProgress } from "./progress.ts";
 
 /** Total number of preparation checkboxes required by the HTML contract. */
 const TOTAL_ITEMS = 8;
@@ -32,21 +33,33 @@ class InterviewPreparationPage {
 
   private readonly checkboxes: HTMLInputElement[];
   private readonly completedItemsStore: CompletedItemsStore;
+  private readonly progressTextElement: HTMLElement;
+  private readonly progressPercentageElement: HTMLElement;
+  private readonly progressBarElement: HTMLProgressElement;
+  private readonly progressMessageElement: HTMLElement;
+  private readonly resetButton: HTMLButtonElement;
 
   /**
-   * Reads and validates the eight preparation checkboxes. Throws
-   * immediately when the HTML contract is broken, rather than failing
-   * later.
+   * Reads and validates the eight preparation checkboxes and every
+   * progress-panel element. Throws immediately when the HTML contract is
+   * broken, rather than failing later.
    */
   constructor() {
 
     this.checkboxes = this.findCheckboxes();
     this.completedItemsStore = new CompletedItemsStore();
+    this.progressTextElement = this.findElementById("progress-text");
+    this.progressPercentageElement = this.findElementById("progress-percentage");
+    this.progressBarElement = this.findProgressBarElement();
+    this.progressMessageElement = this.findElementById("progress-message");
+    this.resetButton = this.findResetButton();
   }
 
   /**
-   * Restores any previously saved checked state, then wires persistence so
-   * further changes are saved. Call once, after construction.
+   * Restores any previously saved checked state, renders the initial
+   * progress display, then wires persistence and the reset button so
+   * further changes are saved and reflected. Call once, after
+   * construction.
    */
   public start(): void {
 
@@ -55,14 +68,23 @@ class InterviewPreparationPage {
     function onCheckboxChange(): void {
 
       page.persistCheckedState();
+      page.updateProgressDisplay();
+    }
+
+    function onResetClick(): void {
+
+      page.resetProgress();
     }
 
     this.restoreCheckedState();
+    this.updateProgressDisplay();
 
     for (const checkbox of this.checkboxes) {
 
       checkbox.addEventListener("change", onCheckboxChange);
     }
+
+    this.resetButton.addEventListener("click", onResetClick);
   }
 
   /**
@@ -123,6 +145,110 @@ class InterviewPreparationPage {
     }
 
     this.completedItemsStore.save(checkedIds);
+  }
+
+  /**
+   * Unchecks every checkbox, clears the persisted state entirely, and
+   * re-renders the progress display, so the page behaves like a
+   * first-ever visit.
+   */
+  private resetProgress(): void {
+
+    for (const checkbox of this.checkboxes) {
+
+      checkbox.checked = false;
+    }
+
+    this.completedItemsStore.clear();
+    this.updateProgressDisplay();
+  }
+
+  /**
+   * Recomputes progress from the checkboxes' current checked state and
+   * writes the result into the progress-count text, the percentage, the
+   * progress bar, and the status message.
+   */
+  private updateProgressDisplay(): void {
+
+    const progress = calculateProgress(this.countCheckedCheckboxes(), TOTAL_ITEMS);
+
+    this.progressTextElement.textContent = `${progress.completedCount} od ${progress.totalCount} završeno`;
+    this.progressPercentageElement.textContent = `${progress.percentage}%`;
+    this.progressBarElement.value = progress.completedCount;
+    this.progressMessageElement.textContent = progress.message;
+  }
+
+  /**
+   * @returns How many of the eight checkboxes are currently checked.
+   */
+  private countCheckedCheckboxes(): number {
+
+    let checkedCount = 0;
+
+    for (const checkbox of this.checkboxes) {
+
+      if (checkbox.checked) {
+
+        checkedCount += 1;
+      }
+    }
+
+    return checkedCount;
+  }
+
+  /**
+   * Finds and validates a single required element by id.
+   *
+   * @param elementId - The `id` attribute of the required element.
+   * @returns The matching element.
+   */
+  private findElementById(elementId: string): HTMLElement {
+
+    const element = document.getElementById(elementId);
+
+    if (!(element instanceof HTMLElement)) {
+
+      throw new MissingElementError(`element with id "${elementId}"`);
+    }
+
+    return element;
+  }
+
+  /**
+   * Finds and validates the `<progress>` element used for the progress
+   * bar, which needs its `value` property set and so must be a
+   * `HTMLProgressElement`, not just a plain `HTMLElement`.
+   *
+   * @returns The progress bar element.
+   */
+  private findProgressBarElement(): HTMLProgressElement {
+
+    const element = document.getElementById("progress-bar");
+
+    if (!(element instanceof HTMLProgressElement)) {
+
+      throw new MissingElementError('progress bar element with id "progress-bar"');
+    }
+
+    return element;
+  }
+
+  /**
+   * Finds and validates the reset button, which needs a `click` listener
+   * and so must be a `HTMLButtonElement`, not just a plain `HTMLElement`.
+   *
+   * @returns The reset button element.
+   */
+  private findResetButton(): HTMLButtonElement {
+
+    const element = document.getElementById("reset-progress");
+
+    if (!(element instanceof HTMLButtonElement)) {
+
+      throw new MissingElementError('reset button with id "reset-progress"');
+    }
+
+    return element;
   }
 }
 
