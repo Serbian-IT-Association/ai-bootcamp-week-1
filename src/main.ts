@@ -25,9 +25,9 @@ class MissingElementError extends Error {
 /**
  * Keeps the eight interview-preparation checkboxes in sync with
  * `localStorage` through `storage.ts`, per the persistence contract in
- * project-specification.md section 9. Connecting the progress display and
- * the reset button to this state is this project's task; see
- * `README-sr.md`.
+ * project-specification.md section 9, and drives the progress display
+ * (count, percentage, bar, message) and the reset button from that same
+ * checked state.
  */
 class InterviewPreparationPage {
 

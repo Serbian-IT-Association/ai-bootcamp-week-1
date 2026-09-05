@@ -4,13 +4,16 @@ Mala lokalna veb-aplikacija koja kandidatu pomaže da prati napredak pripreme
 za intervju: obeležava korake koje je završio, kroz tri grupe stavki, i vidi
 koliko je ukupno napredovao.
 
-Ovo je **trening ("starter") projekat**: HTML, CSS i čuvanje izabranih
-stavki u [`localStorage`][mdn-localstorage] su već gotovi, ali prikaz
-napretka (broj, procenat, traka i poruka) i dugme `Resetuj napredak` još
-nisu povezani na logiku — to je zadatak koji treba dovršiti. Tačan opseg
-zadatka, uključujući koji fajlovi nedostaju i koji ugovor moraju da ispune,
-je u [`project-specification.md`](../project-specification.md) i u
-nedeljnom zadatku koji ti je dat uz ovaj repozitorijum.
+Ovo je **trening ("starter") projekat**: na početku su HTML, CSS i čuvanje
+izabranih stavki u [`localStorage`][mdn-localstorage] bili gotovi, dok
+prikaz napretka (broj, procenat, traka i poruka) i dugme `Resetuj napredak`
+nisu bili povezani na logiku. U ovoj grani su oba povezana — videti
+[`src/progress.ts`](./src/progress.ts) i odeljak Arhitektura ispod. Tačan
+opseg zadatka, uključujući koji ugovor treba da ispuni (na primer oblik
+funkcije `calculateProgress`), opisuje `project-specification.md`, koji
+nije bio dostupan u ovom repozitorijumu ni u nedeljnom zadatku u trenutku
+rada — implementacija ispod prati README i AGENTS.md najbolje što je
+moguće bez tog fajla.
 
 ## Funkcionalnosti
 
@@ -18,12 +21,8 @@ Već radi:
 
 - tri grupe pripremnih koraka (`Dokumenti`, `Istraživanje firme`, `Vežba odgovora`), ukupno osam stavki;
 - izabrane stavke ostaju zapamćene i posle osvežavanja stranice ([`localStorage`][mdn-localstorage], vidi [`src/storage.ts`](./src/storage.ts));
-- dugme `Resetuj napredak` je prikazano, ali još ne radi ništa.
-
-Tvoj zadatak:
-
-- broj i procenat završenih koraka, traka napretka i statusna poruka koja prati napredak (trenutno uvek pokazuju početno stanje, bez obzira na to šta je izabrano);
-- da dugme `Resetuj napredak` stvarno vrati sve na početno stanje i očisti sačuvano stanje.
+- prikaz napretka (broj završenih, procenat, traka i statusna poruka) prati označena polja u realnom vremenu, preko čiste funkcije `calculateProgress` u [`src/progress.ts`](./src/progress.ts);
+- dugme `Resetuj napredak` vraća sve oznake na početno stanje i briše sačuvano stanje iz `localStorage`.
 
 ## Tehnologije
 
@@ -47,8 +46,10 @@ priprema-za-intervju/
   src/
     main.ts                DOM ponašanje (event listeneri, prikaz)
     storage.ts             čuvanje izabranih stavki u localStorage
+    progress.ts            čista funkcija calculateProgress (broj, procenat, poruka)
   tests/
     storage.test.ts        automatski testovi za storage.ts
+    progress.test.ts       automatski testovi za calculateProgress
   scripts/
     copy-static.mjs        kopira statičke fajlove za distribuciju u dist/
     clean.mjs              čisti sve fajlove iz dist/
@@ -83,29 +84,31 @@ Zatim otvori adresu koju server ispiše u terminalu.
 
 ## Arhitektura
 
-Dva TypeScript modula postoje danas, sa jasno odvojenim odgovornostima:
+Tri TypeScript modula postoje danas, sa jasno odvojenim odgovornostima:
 
 - `src/main.ts` čita [HTML][mdn-html] preko `data-prep-item` atributa i `id`
   vrednosti definisanih u `public/index.html`, sluša [`change`
-  događaje][mdn-addeventlistener] na poljima za potvrdu i povezuje
-  [DOM][mdn-dom] sa čuvanjem stanja. Prikaz napretka i dugme `Resetuj
-  napredak` još nisu povezani na ništa — koji fajl(ovi) i koja logika
-  nedostaju je opisano u `project-specification.md`, odeljak 4 i 9.
+  događaje][mdn-addeventlistener] na poljima za potvrdu, povezuje
+  [DOM][mdn-dom] sa čuvanjem stanja, računa napredak preko `progress.ts` i
+  ažurira prikaz i dugme `Resetuj napredak`.
 - `src/storage.ts` izvozi klasu `CompletedItemsStore`, koja čuva i čita
   [`JSON`][mdn-json] listu izabranih `id` vrednosti u
   [`localStorage`][mdn-localstorage]. Ovo je već gotovo i testirano
   (`tests/storage.test.ts`) — ne menjaj ovaj ugovor.
+- `src/progress.ts` izvozi čistu funkciju `calculateProgress`, koja iz broja
+  završenih i ukupnog broja stavki računa procenat (zaokružen na ceo broj)
+  i statusnu poruku, bez pristupa stranici ili skladištu. Testirano u
+  `tests/progress.test.ts`.
 
-Sledeći dijagram prikazuje šta danas stvarno radi: pune linije su već
-povezane, isprekidana linija je jedini deo DOM-a koji `main.ts` još ne
-ažurira.
+Sledeći dijagram prikazuje stvaran tok danas:
 
 ```mermaid
 flowchart LR
     User(["Korisnik"]) -- "klik na checkbox / dugme" --> Main["src/main.ts<br/>InterviewPreparationPage"]
     Main -- "load() / save() / clear()" --> Storage["src/storage.ts<br/>CompletedItemsStore"]
     Storage --> LS[("localStorage")]
-    Main -. "još ne ažurira<br/>(tvoj zadatak)" .-> DOM["public/index.html<br/>#progress-text, #progress-percentage,<br/>#progress-bar, #progress-message"]
+    Main -- "calculateProgress()" --> Progress["src/progress.ts"]
+    Progress -- "broj, procenat, poruka" --> DOM["public/index.html<br/>#progress-text, #progress-percentage,<br/>#progress-bar, #progress-message"]
 ```
 
 Sledeći dijagram prikazuje redosled poziva kada korisnik označi ili ukloni
@@ -123,8 +126,9 @@ sequenceDiagram
 ```
 
 Ovo je učenje kroz čitanje koda, ne samo kroz tekst: otvori
-[`src/main.ts`](./src/main.ts) i [`src/storage.ts`](./src/storage.ts) pored
-ovih dijagrama i prati koja linija koda odgovara kojoj strelici.
+[`src/main.ts`](./src/main.ts), [`src/storage.ts`](./src/storage.ts) i
+[`src/progress.ts`](./src/progress.ts) pored ovih dijagrama i prati koja
+linija koda odgovara kojoj strelici.
 
 ### Od izvornog koda do stranice u browseru
 
