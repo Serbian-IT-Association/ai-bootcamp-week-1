@@ -40,3 +40,43 @@ test("completedCount and totalCount are carried through unchanged", function tes
   assert.equal(progress.completedCount, 3);
   assert.equal(progress.totalCount, 8);
 });
+
+test("a negative completedCount throws instead of returning a nonsensical percentage", function testRejectsNegativeCompletedCount() {
+
+  assert.throws(function callWithNegativeCompletedCount() {
+
+    calculateProgress(-1, 8);
+  }, /completedCount must be an integer between 0 and 8/);
+});
+
+test("a completedCount greater than totalCount throws", function testRejectsCompletedCountAboveTotal() {
+
+  assert.throws(function callWithCompletedCountAboveTotal() {
+
+    calculateProgress(9, 8);
+  }, /completedCount must be an integer between 0 and 8/);
+});
+
+test("a non-integer completedCount throws", function testRejectsFractionalCompletedCount() {
+
+  assert.throws(function callWithFractionalCompletedCount() {
+
+    calculateProgress(1.5, 8);
+  }, /completedCount must be an integer/);
+});
+
+test("a totalCount of zero throws instead of dividing by zero", function testRejectsZeroTotalCount() {
+
+  assert.throws(function callWithZeroTotalCount() {
+
+    calculateProgress(0, 0);
+  }, /totalCount must be a positive integer/);
+});
+
+test("a negative totalCount throws", function testRejectsNegativeTotalCount() {
+
+  assert.throws(function callWithNegativeTotalCount() {
+
+    calculateProgress(0, -8);
+  }, /totalCount must be a positive integer/);
+});

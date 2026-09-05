@@ -67,8 +67,16 @@ class InterviewPreparationPage {
 
     function onCheckboxChange(): void {
 
-      page.persistCheckedState();
       page.updateProgressDisplay();
+
+      try {
+
+        page.persistCheckedState();
+      }
+      catch (error) {
+
+        console.error("InterviewPreparationPage.onCheckboxChange: čuvanje stanja nije uspelo", error);
+      }
     }
 
     function onResetClick(): void {
