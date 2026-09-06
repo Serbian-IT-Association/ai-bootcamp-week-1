@@ -68,6 +68,7 @@ class InterviewPreparationPage {
 
   private readonly checkboxes: HTMLInputElement[];
   private readonly progressElements: ProgressElements;
+  private readonly resetButton: HTMLButtonElement;
   private readonly completedItemsStore: CompletedItemsStore;
 
   /**
@@ -79,6 +80,7 @@ class InterviewPreparationPage {
 
     this.checkboxes = this.findCheckboxes();
     this.progressElements = this.findProgressElements();
+    this.resetButton = this.findResetButton();
     this.completedItemsStore = new CompletedItemsStore();
   }
 
@@ -96,6 +98,18 @@ class InterviewPreparationPage {
       page.updateProgressDisplay();
     }
 
+    function onResetProgressClick(): void {
+
+      page.completedItemsStore.clear();
+
+      for (const checkbox of page.checkboxes) {
+
+        checkbox.checked = false;
+      }
+
+      page.updateProgressDisplay();
+    }
+
     this.restoreCheckedState();
     this.updateProgressDisplay();
 
@@ -103,6 +117,8 @@ class InterviewPreparationPage {
 
       checkbox.addEventListener("change", onCheckboxChange);
     }
+
+    this.resetButton.addEventListener("click", onResetProgressClick);
   }
 
   /**
@@ -170,6 +186,23 @@ class InterviewPreparationPage {
       bar,
       message,
     };
+  }
+
+  /**
+   * Finds and validates the button that clears preparation progress.
+   *
+   * @returns The reset-progress button.
+   */
+  private findResetButton(): HTMLButtonElement {
+
+    const resetButton = document.getElementById("reset-progress");
+
+    if (!(resetButton instanceof HTMLButtonElement)) {
+
+      throw new MissingElementError("'#reset-progress' <button> element");
+    }
+
+    return resetButton;
   }
 
   /**
