@@ -286,11 +286,14 @@ function main(): void {
   page.start();
 }
 
-try {
+if (typeof document !== "undefined") {
 
-  main();
-}
-catch (error) {
+  try {
 
-  reportStartupError(error);
+    main();
+  }
+  catch (error) {
+
+    reportStartupError(error);
+  }
 }
