@@ -3,6 +3,56 @@ import { CompletedItemsStore } from "./storage.ts";
 /** Total number of preparation checkboxes required by the HTML contract. */
 const TOTAL_ITEMS = 8;
 
+/** Calculated values used by the progress display. */
+interface ProgressDetails {
+
+  completedItems: number;
+  percentage: number;
+  message: string;
+}
+
+/**
+ * Calculates the display values for the current number of completed items.
+ *
+ * @param completedItems - Number of currently checked preparation items.
+ * @param totalItems - Total number of available preparation items.
+ * @returns The completed count, percentage, and matching status message.
+ */
+function calculateProgress(completedItems: number, totalItems: number): ProgressDetails {
+
+  if (totalItems <= 0) {
+
+    throw new Error("calculateProgress: totalItems must be greater than zero");
+  }
+
+  if (completedItems < 0 || completedItems > totalItems) {
+
+    throw new Error("calculateProgress: completedItems must be between zero and totalItems");
+  }
+
+  const percentage = Math.round((completedItems / totalItems) * 100);
+  let message = "Samo nastavi!";
+
+  if (completedItems === 0) {
+
+    message = "Počni pripremu";
+  }
+  else if (completedItems === totalItems) {
+
+    message = "Spreman/na si za intervju!";
+  }
+  else if (percentage >= 50) {
+
+    message = "Skoro gotovo!";
+  }
+
+  return {
+    completedItems,
+    percentage,
+    message
+  };
+}
+
 /**
  * Thrown when the page markup does not match the HTML contract this module
  * depends on (project-specification.md section 8), so a broken page fails
@@ -32,6 +82,11 @@ class InterviewPreparationPage {
 
   private readonly checkboxes: HTMLInputElement[];
   private readonly completedItemsStore: CompletedItemsStore;
+  private readonly progressText: HTMLSpanElement;
+  private readonly progressPercentage: HTMLSpanElement;
+  private readonly progressBar: HTMLProgressElement;
+  private readonly progressMessage: HTMLParagraphElement;
+  private readonly resetProgressButton: HTMLButtonElement;
 
   /**
    * Reads and validates the eight preparation checkboxes. Throws
@@ -42,6 +97,11 @@ class InterviewPreparationPage {
 
     this.checkboxes = this.findCheckboxes();
     this.completedItemsStore = new CompletedItemsStore();
+    this.progressText = this.findProgressText();
+    this.progressPercentage = this.findProgressPercentage();
+    this.progressBar = this.findProgressBar();
+    this.progressMessage = this.findProgressMessage();
+    this.resetProgressButton = this.findResetProgressButton();
   }
 
   /**
@@ -55,14 +115,23 @@ class InterviewPreparationPage {
     function onCheckboxChange(): void {
 
       page.persistCheckedState();
+      page.updateProgressDisplay();
+    }
+
+    function onResetProgressButtonClick(): void {
+
+      page.resetProgress();
     }
 
     this.restoreCheckedState();
+    this.updateProgressDisplay();
 
     for (const checkbox of this.checkboxes) {
 
       checkbox.addEventListener("change", onCheckboxChange);
     }
+
+    this.resetProgressButton.addEventListener("click", onResetProgressButtonClick);
   }
 
   /**
@@ -90,6 +159,91 @@ class InterviewPreparationPage {
     }
 
     return checkboxes;
+  }
+
+  /**
+   * Finds the element that displays the completed-item count.
+   *
+   * @returns The validated progress-text span element.
+   */
+  private findProgressText(): HTMLSpanElement {
+
+    const element = document.getElementById("progress-text");
+
+    if (!(element instanceof HTMLSpanElement)) {
+
+      throw new MissingElementError("a span with id 'progress-text'");
+    }
+
+    return element;
+  }
+
+  /**
+   * Finds the element that displays the completed percentage.
+   *
+   * @returns The validated progress-percentage span element.
+   */
+  private findProgressPercentage(): HTMLSpanElement {
+
+    const element = document.getElementById("progress-percentage");
+
+    if (!(element instanceof HTMLSpanElement)) {
+
+      throw new MissingElementError("a span with id 'progress-percentage'");
+    }
+
+    return element;
+  }
+
+  /**
+   * Finds the native progress element.
+   *
+   * @returns The validated progress-bar element.
+   */
+  private findProgressBar(): HTMLProgressElement {
+
+    const element = document.getElementById("progress-bar");
+
+    if (!(element instanceof HTMLProgressElement)) {
+
+      throw new MissingElementError("a progress element with id 'progress-bar'");
+    }
+
+    return element;
+  }
+
+  /**
+   * Finds the live region that announces the progress status.
+   *
+   * @returns The validated progress-message paragraph element.
+   */
+  private findProgressMessage(): HTMLParagraphElement {
+
+    const element = document.getElementById("progress-message");
+
+    if (!(element instanceof HTMLParagraphElement)) {
+
+      throw new MissingElementError("a paragraph with id 'progress-message'");
+    }
+
+    return element;
+  }
+
+  /**
+   * Finds the button that resets all preparation progress.
+   *
+   * @returns The validated reset-progress button element.
+   */
+  private findResetProgressButton(): HTMLButtonElement {
+
+    const element = document.getElementById("reset-progress");
+
+    if (!(element instanceof HTMLButtonElement)) {
+
+      throw new MissingElementError("a button with id 'reset-progress'");
+    }
+
+    return element;
   }
 
   /**
@@ -124,6 +278,54 @@ class InterviewPreparationPage {
 
     this.completedItemsStore.save(checkedIds);
   }
+
+  /**
+   * Counts the preparation checkboxes that are currently checked.
+   *
+   * @returns The number of completed preparation items.
+   */
+  private countCompletedItems(): number {
+
+    let completedItems = 0;
+
+    for (const checkbox of this.checkboxes) {
+
+      if (checkbox.checked) {
+
+        completedItems += 1;
+      }
+    }
+
+    return completedItems;
+  }
+
+  /**
+   * Updates every visible progress value from the current checkbox state.
+   */
+  private updateProgressDisplay(): void {
+
+    const completedItems = this.countCompletedItems();
+    const progress = calculateProgress(completedItems, TOTAL_ITEMS);
+
+    this.progressText.textContent = `${progress.completedItems} od ${TOTAL_ITEMS} završeno`;
+    this.progressPercentage.textContent = `${progress.percentage}%`;
+    this.progressBar.value = progress.completedItems;
+    this.progressMessage.textContent = progress.message;
+  }
+
+  /**
+   * Clears the visible checkbox state and the matching persisted state.
+   */
+  private resetProgress(): void {
+
+    for (const checkbox of this.checkboxes) {
+
+      checkbox.checked = false;
+    }
+
+    this.completedItemsStore.clear();
+    this.updateProgressDisplay();
+  }
 }
 
 /**
@@ -152,11 +354,16 @@ function main(): void {
   page.start();
 }
 
-try {
+if (typeof document !== "undefined") {
 
-  main();
-}
-catch (error) {
+  try {
 
-  reportStartupError(error);
+    main();
+  }
+  catch (error) {
+
+    reportStartupError(error);
+  }
 }
+
+export { calculateProgress };
