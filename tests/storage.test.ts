@@ -109,6 +109,16 @@ class TestCheckbox extends TestElement {
   }
 }
 
+/** Distinct button element used to validate the reset control. */
+class TestButton extends TestElement {
+
+  /** Creates a distinct button type for the controller's validation. */
+  constructor() {
+
+    super();
+  }
+}
+
 /** Native progress properties needed by the controller. */
 class TestProgressBar extends TestElement {
 
@@ -132,6 +142,7 @@ class PageTestEnvironment {
   public readonly bar: TestProgressBar;
   public readonly savedValues: Map<string, string>;
   public failSaving: boolean;
+  public failClearing: boolean;
   private readonly originalGlobals: Map<string, PropertyDescriptor | undefined>;
 
   /** Builds the eight checkboxes and all existing progress elements. */
@@ -142,6 +153,7 @@ class PageTestEnvironment {
     this.bar = new TestProgressBar();
     this.savedValues = new Map();
     this.failSaving = false;
+    this.failClearing = false;
     this.originalGlobals = new Map();
 
     for (let index = 1; index <= 8; index += 1) {
@@ -155,6 +167,7 @@ class PageTestEnvironment {
     }
 
     this.elements.set("#progress-bar", this.bar);
+    this.elements.set("#reset-progress", new TestButton());
 
     if (rawValue !== null) {
 
@@ -169,6 +182,7 @@ class PageTestEnvironment {
     const replacements = {
       HTMLElement: TestElement,
       HTMLInputElement: TestCheckbox,
+      HTMLButtonElement: TestButton,
       HTMLProgressElement: TestProgressBar,
       document: {
         querySelectorAll: function querySelectorAll(selector: string) {
@@ -196,6 +210,11 @@ class PageTestEnvironment {
           environment.savedValues.set(key, value);
         },
         removeItem: function removeItem(key: string) {
+
+          if (environment.failClearing) {
+
+            throw new Error("Simulated storage removal failure");
+          }
 
           environment.savedValues.delete(key);
         }
@@ -237,7 +256,7 @@ class PageTestEnvironment {
   }
 }
 
-test("page restores progress, handles changes and keeps reset inactive", async function testPageProgress(context) {
+test("page restores progress and handles changes", async function testPageProgress(context) {
 
   const errors: unknown[][] = [];
   context.mock.method(console, "error", function recordError(...values: unknown[]) {
@@ -288,16 +307,6 @@ test("page restores progress, handles changes and keeps reset inactive", async f
         assert.deepEqual(new CompletedItemsStore().load(), checkedIds);
       }
 
-      const resetButton = environment.elements.get("#reset-progress");
-      assert.ok(resetButton);
-      resetButton.dispatchEvent(new Event("click"));
-      environment.assertProgress(8, "100%", "Priprema je završena");
-      assert.deepEqual(new CompletedItemsStore().load(), checkedIds);
-      assert.ok(environment.checkboxes.every(function isChecked(checkbox) {
-
-        return checkbox.checked;
-      }));
-
       for (const [index, checkbox] of environment.checkboxes.entries()) {
 
         checkbox.checked = false;
@@ -325,6 +334,106 @@ test("page restores progress, handles changes and keeps reset inactive", async f
       assert.equal(loggedError[1].message, "Simulated storage failure");
       assert.deepEqual(new CompletedItemsStore().load(), []);
       errors.length = 0;
+    }
+    finally {
+
+      environment.dispose();
+    }
+  }
+});
+
+test("reset clears every selection and only its storage key", async function testReset(context) {
+
+  const errors: unknown[][] = [];
+  context.mock.method(console, "error", function recordResetError(...values: unknown[]) {
+
+    errors.push(values);
+  });
+
+  const storageKey = "priprema-za-intervju:completed-items";
+
+  for (const completed of [0, 3, 8]) {
+
+    const environment = new PageTestEnvironment(null);
+
+    try {
+
+      environment.install();
+      const moduleUrl = `../src/main.ts?reset-test=${completed}`;
+      await import(moduleUrl);
+
+      for (const checkbox of environment.checkboxes.slice(0, completed)) {
+
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event("change"));
+      }
+
+      environment.savedValues.set("unrelated-key", "keep");
+      const resetButton = environment.elements.get("#reset-progress");
+      assert.ok(resetButton);
+
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+
+        resetButton.dispatchEvent(new Event("click"));
+        environment.assertProgress(0, "0%", "Počni pripremu");
+        assert.equal(environment.savedValues.has(storageKey), false);
+        assert.equal(environment.savedValues.get("unrelated-key"), "keep");
+
+        for (const checkbox of environment.checkboxes) {
+
+          assert.equal(checkbox.checked, false);
+        }
+      }
+
+      const reloadedEnvironment = new PageTestEnvironment(environment.savedValues.get(storageKey) ?? null);
+
+      try {
+
+        reloadedEnvironment.install();
+        const reloadUrl = `../src/main.ts?reset-reload=${completed}`;
+        await import(reloadUrl);
+        reloadedEnvironment.assertProgress(0, "0%", "Počni pripremu");
+
+        for (const checkbox of reloadedEnvironment.checkboxes) {
+
+          assert.equal(checkbox.checked, false);
+        }
+      }
+      finally {
+
+        reloadedEnvironment.dispose();
+      }
+
+      const firstCheckbox = environment.checkboxes[0];
+      assert.ok(firstCheckbox);
+      firstCheckbox.checked = true;
+      firstCheckbox.dispatchEvent(new Event("change"));
+      environment.assertProgress(1, "12,5%", "Priprema je u toku");
+      assert.deepEqual(new CompletedItemsStore().load(), [firstCheckbox.id]);
+      assert.equal(errors.length, 0);
+
+      environment.failClearing = true;
+      resetButton.dispatchEvent(new Event("click"));
+      environment.assertProgress(0, "0%", "Počni pripremu");
+
+      for (const checkbox of environment.checkboxes) {
+
+        assert.equal(checkbox.checked, false);
+      }
+
+      assert.deepEqual(new CompletedItemsStore().load(), [firstCheckbox.id]);
+      assert.equal(errors.length, 1);
+      const loggedError = errors[0];
+      assert.ok(loggedError);
+      assert.equal(loggedError[0], "InterviewPreparationPage.resetProgress: brisanje stanja nije uspelo");
+      assert.ok(loggedError[1] instanceof Error);
+      assert.equal(loggedError[1].message, "Simulated storage removal failure");
+      errors.length = 0;
+
+      environment.failClearing = false;
+      resetButton.dispatchEvent(new Event("click"));
+      assert.equal(environment.savedValues.has(storageKey), false);
+      assert.equal(errors.length, 0);
     }
     finally {
 

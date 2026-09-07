@@ -36,6 +36,7 @@ class InterviewPreparationPage {
   private readonly progressPercentage: HTMLElement;
   private readonly progressBar: HTMLProgressElement;
   private readonly progressMessage: HTMLElement;
+  private readonly resetButton: HTMLButtonElement;
 
   /**
    * Reads and validates the eight preparation checkboxes. Throws
@@ -57,6 +58,14 @@ class InterviewPreparationPage {
     }
 
     this.progressBar = progressBar;
+    const resetButton = document.querySelector("#reset-progress");
+
+    if (!(resetButton instanceof HTMLButtonElement)) {
+
+      throw new MissingElementError("#reset-progress (HTMLButtonElement)");
+    }
+
+    this.resetButton = resetButton;
     this.completedItemsStore = new CompletedItemsStore();
   }
 
@@ -83,12 +92,40 @@ class InterviewPreparationPage {
       }
     }
 
+    /** Resets the page through the same controller that handles changes. */
+    function onResetClick(): void {
+
+      page.resetProgress();
+    }
+
     this.restoreCheckedState();
     this.updateProgress();
 
     for (const checkbox of this.checkboxes) {
 
       checkbox.addEventListener("change", onCheckboxChange);
+    }
+
+    this.resetButton.addEventListener("click", onResetClick);
+  }
+
+  /** Resets visible progress even when the browser refuses storage access. */
+  private resetProgress(): void {
+
+    for (const checkbox of this.checkboxes) {
+
+      checkbox.checked = false;
+    }
+
+    this.updateProgress();
+
+    try {
+
+      this.completedItemsStore.clear();
+    }
+    catch (error) {
+
+      console.error("InterviewPreparationPage.resetProgress: brisanje stanja nije uspelo", error);
     }
   }
 
