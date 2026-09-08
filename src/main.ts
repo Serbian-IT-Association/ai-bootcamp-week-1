@@ -1,80 +1,8 @@
 import { CompletedItemsStore } from "./storage.ts";
+import { calculateProgress } from "./progress.ts";
 
 /** Total number of preparation checkboxes required by the HTML contract. */
 const TOTAL_ITEMS = 8;
-
-/** Summary of the current completion state, ready to render into the DOM. */
-type ProgressSummary = {
-  completedCount: number;
-  percentage: number;
-  text: string;
-  percentageText: string;
-  statusMessage: string;
-  message: string;
-};
-
-/**
- * Computes the current completed count and the textual/progress values to
- * render for the given checklist state.
- *
- * @param completedCount - The number of checked items.
- * @param totalItems - The total number of checklist items.
- * @returns The progress summary for the current state.
- */
-function calculateProgress(completedCount: number, totalItems: number): ProgressSummary {
-
-  const safeTotalItems = totalItems > 0 ? totalItems : 0;
-  const safeCompletedCount = Math.max(0, Math.min(completedCount, safeTotalItems));
-  const percentage = safeTotalItems === 0 ? 0 : Math.round((safeCompletedCount / safeTotalItems) * 100);
-  const text = `${safeCompletedCount} od ${safeTotalItems} završeno`;
-  const percentageText = `${percentage}%`;
-  const statusMessage = getStatusMessage(safeCompletedCount, safeTotalItems);
-
-  return {
-    completedCount: safeCompletedCount,
-    percentage,
-    text,
-    percentageText,
-    statusMessage,
-    message: statusMessage,
-  };
-}
-
-/**
- * Derives a human-friendly status for the completion state.
- *
- * @param completedCount - The number of checked items.
- * @param totalItems - The total number of checklist items.
- * @returns A short status message suitable for the progress panel.
- */
-function getStatusMessage(completedCount: number, totalItems: number): string {
-
-  if (completedCount === 0) {
-
-    return "Počni pripremu!";
-  }
-
-  const percentage = totalItems === 0 ? 0 : Math.round((completedCount / totalItems) * 100);
-
-  if (percentage > 0 && percentage < 50) {
-
-    return "U toku...";
-  }
-
-  if (percentage >= 50 && percentage < 70) {
-
-    return "Polovina je završena!";
-  }
-
-  if (percentage >= 70 && percentage < 100) {
-
-    return "Skoro si spreman/a!";
-  }
-
-  return "Priprema je završena!";
-}
-
-export { calculateProgress };
 
 /**
  * Thrown when the page markup does not match the HTML contract this module
@@ -313,11 +241,11 @@ class InterviewPreparationPage {
 
     const summary = calculateProgress(this.countCheckedItems(), TOTAL_ITEMS);
 
-    this.progressText.textContent = summary.text;
-    this.progressPercentage.textContent = summary.percentageText;
+    this.progressText.textContent = `${summary.completed} od ${summary.total} završeno`;
+    this.progressPercentage.textContent = `${summary.percentage}%`;
     this.progressBar.max = TOTAL_ITEMS;
-    this.progressBar.value = summary.completedCount;
-    this.progressMessage.textContent = summary.statusMessage;
+    this.progressBar.value = summary.completed;
+    this.progressMessage.textContent = summary.message;
   }
 
   /**
