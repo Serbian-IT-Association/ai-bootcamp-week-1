@@ -25,9 +25,8 @@ class MissingElementError extends Error {
 /**
  * Keeps the eight interview-preparation checkboxes in sync with
  * `localStorage` through `storage.ts`, per the persistence contract in
- * project-specification.md section 9, and renders progress from their
- * current checked state. Connecting the reset button remains part of this
- * project's task; see `README.md`.
+ * project-specification.md section 9, renders progress from their current
+ * checked state, and resets both visible and persisted progress.
  */
 class InterviewPreparationPage {
 
@@ -56,8 +55,8 @@ class InterviewPreparationPage {
   }
 
   /**
-   * Restores saved checkbox state, renders it, and wires future checkbox
-   * changes to persistence and the progress display. Call once, after
+   * Restores saved checkbox state, renders it, and wires checkbox and reset
+   * interactions to their corresponding behavior. Call once, after
    * construction.
    */
   public start(): void {
@@ -70,6 +69,11 @@ class InterviewPreparationPage {
       page.updateProgressDisplay();
     }
 
+    function onResetButtonClick(): void {
+
+      page.resetProgress();
+    }
+
     this.restoreCheckedState();
     this.updateProgressDisplay();
 
@@ -77,6 +81,8 @@ class InterviewPreparationPage {
 
       checkbox.addEventListener("change", onCheckboxChange);
     }
+
+    this.resetButton.addEventListener("click", onResetButtonClick);
   }
 
   /**
@@ -256,6 +262,22 @@ class InterviewPreparationPage {
     this.progressPercentageElement.textContent = `${progress.percentage}%`;
     this.progressBarElement.value = progress.completedCount;
     this.progressMessageElement.textContent = progress.message;
+  }
+
+  /**
+   * Clears persisted progress, unchecks every item, and renders the initial
+   * progress state.
+   */
+  private resetProgress(): void {
+
+    this.completedItemsStore.clear();
+
+    for (const checkbox of this.checkboxes) {
+
+      checkbox.checked = false;
+    }
+
+    this.updateProgressDisplay();
   }
 }
 
