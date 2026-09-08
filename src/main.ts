@@ -1,4 +1,5 @@
 import { CompletedItemsStore } from "./storage.ts";
+import { calculateProgress } from "./progress.ts";
 
 /** Total number of preparation checkboxes required by the HTML contract. */
 const TOTAL_ITEMS = 8;
@@ -24,17 +25,21 @@ class MissingElementError extends Error {
 /**
  * Keeps the eight interview-preparation checkboxes in sync with
  * `localStorage` through `storage.ts`, per the persistence contract in
- * project-specification.md section 9. Connecting the progress display and
- * the reset button to this state is this project's task; see
- * `README-sr.md`.
+ * project-specification.md section 9. Updates progress after restoring,
+ * changing, or resetting the checked state.
  */
 class InterviewPreparationPage {
 
   private readonly checkboxes: HTMLInputElement[];
   private readonly completedItemsStore: CompletedItemsStore;
+  private readonly progressText: HTMLElement;
+  private readonly progressPercentage: HTMLElement;
+  private readonly progressBar: HTMLProgressElement;
+  private readonly progressMessage: HTMLElement;
+  private readonly resetButton: HTMLButtonElement;
 
   /**
-   * Reads and validates the eight preparation checkboxes. Throws
+   * Reads and validates the checkboxes, progress display, and reset button. Throws
    * immediately when the HTML contract is broken, rather than failing
    * later.
    */
@@ -42,11 +47,30 @@ class InterviewPreparationPage {
 
     this.checkboxes = this.findCheckboxes();
     this.completedItemsStore = new CompletedItemsStore();
+    this.progressText = this.findRequiredElement("#progress-text");
+    this.progressPercentage = this.findRequiredElement("#progress-percentage");
+    this.progressMessage = this.findRequiredElement("#progress-message");
+
+    const progressBar = this.findRequiredElement("#progress-bar");
+    const resetButton = this.findRequiredElement("#reset-progress");
+
+    if (!(progressBar instanceof HTMLProgressElement)) {
+
+      throw new MissingElementError("progress element '#progress-bar'");
+    }
+
+    if (!(resetButton instanceof HTMLButtonElement)) {
+
+      throw new MissingElementError("button element '#reset-progress'");
+    }
+
+    this.progressBar = progressBar;
+    this.resetButton = resetButton;
   }
 
   /**
-   * Restores any previously saved checked state, then wires persistence so
-   * further changes are saved. Call once, after construction.
+   * Restores saved state and progress, then connects changes and reset.
+   * Call once, after construction.
    */
   public start(): void {
 
@@ -55,14 +79,75 @@ class InterviewPreparationPage {
     function onCheckboxChange(): void {
 
       page.persistCheckedState();
+      page.updateProgress();
+    }
+
+    function onResetProgress(): void {
+
+      for (const checkbox of page.checkboxes) {
+
+        checkbox.checked = false;
+      }
+
+      try {
+
+        page.completedItemsStore.clear();
+      }
+      catch (error) {
+
+        const message = error instanceof Error ? error.message : String(error);
+
+        throw new Error(`InterviewPreparationPage: could not clear saved progress: ${message}`);
+      }
+
+      page.updateProgress();
     }
 
     this.restoreCheckedState();
+    this.updateProgress();
 
     for (const checkbox of this.checkboxes) {
 
       checkbox.addEventListener("change", onCheckboxChange);
     }
+
+    this.resetButton.addEventListener("click", onResetProgress);
+  }
+
+  /** Finds a required HTML element or reports the broken selector contract. */
+  private findRequiredElement(selector: string): HTMLElement {
+
+    const element = document.querySelector(selector);
+
+    if (!(element instanceof HTMLElement)) {
+
+      throw new MissingElementError(selector);
+    }
+
+    return element;
+  }
+
+  /** Renders progress from the current checkbox state, including restored state. */
+  private updateProgress(): void {
+
+    let completed = 0;
+
+    for (const checkbox of this.checkboxes) {
+
+      if (checkbox.checked) {
+
+        completed += 1;
+      }
+    }
+
+    const progress = calculateProgress(completed, TOTAL_ITEMS);
+    const percentageText = `${progress.percentage}%`;
+
+    this.progressText.textContent = `${progress.completed} od ${TOTAL_ITEMS} završeno`;
+    this.progressPercentage.textContent = percentageText;
+    this.progressBar.value = progress.completed;
+    this.progressBar.textContent = percentageText;
+    this.progressMessage.textContent = progress.message;
   }
 
   /**
