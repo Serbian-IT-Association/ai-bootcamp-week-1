@@ -32,7 +32,7 @@ function calculateProgress(completedCount: number, totalCount: number): Progress
   validateCounts(completedCount, totalCount);
 
   const percentage = Math.round((completedCount / totalCount) * 100);
-  const message = determineProgressMessage(completedCount, totalCount, percentage);
+  const message = determineProgressMessage(completedCount, totalCount);
 
   return { completedCount, totalCount, percentage, message };
 }
@@ -63,19 +63,13 @@ function validateCounts(completedCount: number, totalCount: number): void {
   }
 }
 
-/** Percentage from which progress is considered far enough along to call out separately. */
-const NEARLY_DONE_PERCENTAGE_THRESHOLD = 50;
-
 /**
  * @param completedCount - How many preparation items are currently checked.
  * @param totalCount - The total number of preparation items.
- * @param percentage - The rounded percentage already computed for this
- *   count, so the halfway threshold below is judged on the same number
- *   the panel displays.
  * @returns A status message appropriate to the current progress: none
- *   started, under halfway, halfway or more, or every item completed.
+ *   started, some items completed, or every item completed.
  */
-function determineProgressMessage(completedCount: number, totalCount: number, percentage: number): string {
+function determineProgressMessage(completedCount: number, totalCount: number): string {
 
   if (completedCount === 0) {
 
@@ -84,15 +78,10 @@ function determineProgressMessage(completedCount: number, totalCount: number, pe
 
   if (completedCount === totalCount) {
 
-    return "Spreman/na si za intervju!";
+    return "Spreman/na si za intervju";
   }
 
-  if (percentage >= NEARLY_DONE_PERCENTAGE_THRESHOLD) {
-
-    return "Skoro gotovo!";
-  }
-
-  return "Nastavi, dobro ti ide";
+  return "Na dobrom si putu";
 }
 
 export { calculateProgress };

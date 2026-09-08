@@ -9,11 +9,8 @@ izabranih stavki u [`localStorage`][mdn-localstorage] bili gotovi, dok
 prikaz napretka (broj, procenat, traka i poruka) i dugme `Resetuj napredak`
 nisu bili povezani na logiku. U ovoj grani su oba povezana — videti
 [`src/progress.ts`](./src/progress.ts) i odeljak Arhitektura ispod. Tačan
-opseg zadatka, uključujući koji ugovor treba da ispuni (na primer oblik
-funkcije `calculateProgress`), opisuje `project-specification.md`, koji
-nije bio dostupan u ovom repozitorijumu ni u nedeljnom zadatku u trenutku
-rada — implementacija ispod prati README i AGENTS.md najbolje što je
-moguće bez tog fajla.
+opseg zadatka, uključujući ugovor funkcije `calculateProgress`, opisan je u
+`project-specification.md` i nedeljnom zadatku.
 
 ## Funkcionalnosti
 

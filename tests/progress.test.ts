@@ -15,6 +15,7 @@ test("one of eight completed rounds 12.5% up to 13%, not down to 12%", function 
   const progress = calculateProgress(1, 8);
 
   assert.equal(progress.percentage, 13);
+  assert.equal(progress.message, "Na dobrom si putu");
 });
 
 test("fewer than half the items completed reports an in-progress message", function testPartiallyCompletedBelowHalf() {
@@ -22,15 +23,15 @@ test("fewer than half the items completed reports an in-progress message", funct
   const progress = calculateProgress(3, 8);
 
   assert.equal(progress.percentage, 38);
-  assert.equal(progress.message, "Nastavi, dobro ti ide");
+  assert.equal(progress.message, "Na dobrom si putu");
 });
 
-test("half or more of the items completed reports a nearly-done message", function testPartiallyCompletedAtOrAboveHalf() {
+test("half of the items completed still reports the required in-progress message", function testPartiallyCompletedAtHalf() {
 
   const progress = calculateProgress(4, 8);
 
   assert.equal(progress.percentage, 50);
-  assert.equal(progress.message, "Skoro gotovo!");
+  assert.equal(progress.message, "Na dobrom si putu");
 });
 
 test("every item completed reports 100% and the completion message", function testAllCompleted() {
@@ -38,7 +39,7 @@ test("every item completed reports 100% and the completion message", function te
   const progress = calculateProgress(8, 8);
 
   assert.equal(progress.percentage, 100);
-  assert.equal(progress.message, "Spreman/na si za intervju!");
+  assert.equal(progress.message, "Spreman/na si za intervju");
 });
 
 test("completedCount and totalCount are carried through unchanged", function testCountsPassThrough() {
