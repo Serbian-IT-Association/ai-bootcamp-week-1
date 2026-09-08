@@ -105,6 +105,7 @@ class InterviewPreparationPage {
 
   private readonly checkboxes: HTMLInputElement[];
   private readonly completedItemsStore: CompletedItemsStore;
+  private readonly resetButton: HTMLButtonElement;
   private readonly progressText: HTMLElement;
   private readonly progressPercentage: HTMLElement;
   private readonly progressBar: HTMLProgressElement;
@@ -119,6 +120,7 @@ class InterviewPreparationPage {
 
     this.checkboxes = this.findCheckboxes();
     this.completedItemsStore = new CompletedItemsStore();
+    this.resetButton = this.findResetButton();
     this.progressText = this.findProgressText();
     this.progressPercentage = this.findProgressPercentage();
     this.progressBar = this.findProgressBar();
@@ -139,6 +141,12 @@ class InterviewPreparationPage {
       page.renderProgress();
     }
 
+    function onResetClick(): void {
+
+      page.resetCheckedState();
+      page.renderProgress();
+    }
+
     this.restoreCheckedState();
     this.renderProgress();
 
@@ -146,6 +154,8 @@ class InterviewPreparationPage {
 
       checkbox.addEventListener("change", onCheckboxChange);
     }
+
+    this.resetButton.addEventListener("click", onResetClick);
   }
 
   /**
@@ -173,6 +183,23 @@ class InterviewPreparationPage {
     }
 
     return checkboxes;
+  }
+
+  /**
+   * Finds the Reset button required by the HTML contract.
+   *
+   * @returns The button that clears the completed preparation state.
+   */
+  private findResetButton(): HTMLButtonElement {
+
+    const element = document.getElementById("reset-progress");
+
+    if (!(element instanceof HTMLButtonElement)) {
+
+      throw new MissingElementError("#reset-progress");
+    }
+
+    return element;
   }
 
   /**
@@ -309,6 +336,20 @@ class InterviewPreparationPage {
     }
 
     this.completedItemsStore.save(checkedIds);
+  }
+
+  /**
+   * Clears the persisted completed-item state, then unchecks all preparation
+   * checkboxes.
+   */
+  private resetCheckedState(): void {
+
+    this.completedItemsStore.clear();
+
+    for (const checkbox of this.checkboxes) {
+
+      checkbox.checked = false;
+    }
   }
 
 }
